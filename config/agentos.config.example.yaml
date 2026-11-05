@@ -1,0 +1,105 @@
+# Copy to ~/.agentos/agentos.config.yaml and edit.
+# Values in <angle brackets> are placeholders: fill in models you actually have access to.
+# API keys are NOT stored here: put them in the macOS Keychain
+#   security add-generic-password -s agentos -a OPENROUTER_API_KEY -w
+# or in ~/.agentos/.env (chmod 600).
+
+server:
+  host: 127.0.0.1        # never change to 0.0.0.0
+  port: 7777
+
+dataDir: ~/.agentos
+
+vault:
+  dir: ~/Obsidian/MyVault/AgentOS
+
+terminal:
+  backend: tmux          # tmux (default, survives daemon restarts) | pty
+
+projects:
+  - id: firstrepo
+    name: firstrepo
+    path: ~/code/firstrepo
+    defaultBranch: main
+    checks:
+      - pnpm install --frozen-lockfile
+      - pnpm typecheck
+      - pnpm test
+
+board:
+  plannerAgent: claude
+  builderAgent: claude
+  reviewerAgent: deepseek  # must differ from builderAgent
+  maxParallelBuilds: 1     # subscription CLIs have usage limits
+  maxIterations: 3
+  passScore: 80
+
+room:
+  defaultJudge: claude
+  maxRounds: 1
+  contextMessages: 20
+
+agents:
+  # --- Subscription CLIs (use your own logged-in CLI; tokens are never touched) ---
+  - id: claude
+    name: Claude Code
+    kind: claude-cli
+    command: claude
+    color: "#e07a5f"
+    modes:
+      readonly: { permissionMode: plan }
+      build:
+        permissionMode: acceptEdits
+        allowedTools: ["Read", "Edit", "Write", "Glob", "Grep", "Bash(git status:*)", "Bash(git diff:*)", "Bash(pnpm test:*)"]
+
+  - id: hermes
+    name: Hermes Agent
+    kind: pty               # upgrade to cli-json / cli-text in M2 after recording --help fixtures
+    command: hermes
+    color: "#8b5cf6"
+
+  - id: antigravity
+    name: Antigravity
+    kind: pty               # upgrade in M2 after verifying the binary name + headless flags
+    command: antigravity
+    color: "#22c55e"
+
+  # --- API-key brokers (OpenAI-compatible) ---
+  - id: openrouter-default
+    name: "OpenRouter · <model>"
+    kind: openai-compatible
+    baseUrl: https://openrouter.ai/api/v1
+    apiKeyEnv: OPENROUTER_API_KEY
+    model: "<provider/model-slug>"
+    color: "#38bdf8"
+
+  - id: deepseek
+    name: DeepSeek
+    kind: openai-compatible
+    baseUrl: https://api.deepseek.com
+    apiKeyEnv: DEEPSEEK_API_KEY
+    model: "<deepseek-model-id>"
+    color: "#3b82f6"
+
+  # Add more brokers the same way: id, baseUrl, apiKeyEnv, model.
+
+  # --- Local models ---
+  - id: ollama
+    name: "Ollama · <model>"
+    kind: openai-compatible
+    baseUrl: http://127.0.0.1:11434/v1
+    model: "<local-model>"
+    color: "#f59e0b"
+
+  - id: lmstudio
+    name: "LM Studio · <model>"
+    kind: openai-compatible
+    baseUrl: http://127.0.0.1:1234/v1
+    model: "<local-model>"
+    color: "#ec4899"
+
+  # --- Testing ---
+  - id: mock
+    name: Mock
+    kind: mock
+    color: "#9ca3af"
